@@ -57,6 +57,7 @@ class PokeAccessibilityService : AccessibilityService() {
     }
 
     private fun captureAndCheck() {
+        if (!DetectionState.isAutoEnabled.value) return
         takeScreenshot(
             displayId,
             mainExecutor,
@@ -114,10 +115,12 @@ class PokeAccessibilityService : AccessibilityService() {
             }
             is DetectionResult.Single -> {
                 lastResult = result
+                DetectionState.postResult(result)
                 Log.d(TAG, "Detected: ${result.pokemon.name}")
             }
             is DetectionResult.Double -> {
                 lastResult = result
+                DetectionState.postResult(result)
                 Log.d(TAG, "Detected 2v2: ${result.pokemon1.name} + ${result.pokemon2.name}")
             }
         }

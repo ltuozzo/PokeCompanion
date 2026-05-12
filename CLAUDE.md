@@ -69,14 +69,17 @@ Gen 4–9 data (~650 more Pokemon) can be added later from PokeAPI before Sessio
 - `findByName` uses `LOWER(name) = LOWER(:name)` — exact match required; OCR must produce clean names
 - If OCR accuracy is low on GBA fonts, a fuzzy prefix search via `search()` can be tried as fallback
 
-### Session 4 — NEXT
-- Jetpack Compose dependencies + ComposeActivity setup
-- Weakness card UI with official-style type badges (icon + text + multiplier label)
-- 2v2 tab layout (PagerState with 2 tabs)
-- Auto ON/OFF toggle (bottom-left)
-- Search button stub (bottom-right)
+### Session 4 — COMPLETE
+- ✅ Compose BOM 2024.05.00, activity-compose 1.9.0, lifecycle-runtime-compose 2.7.0
+- ✅ `detection/DetectionState.kt` — singleton StateFlow bridge (result + isAutoEnabled)
+- ✅ `ui/theme/TypeColors.kt` — official type colours + readable content colour per type
+- ✅ `ui/components/TypeBadge.kt` — coloured badge with type name + multiplier label
+- ✅ `ui/components/WeaknessCard.kt` — header (name + own types) + FlowRow weakness rows
+- ✅ `ui/screens/MainScreen.kt` — dark bg, 2v2 TabRow, Auto ON/OFF toggle, Search stub
+- ✅ `MainActivity.kt` — swapped to ComponentActivity + setContent + darkColorScheme
+- ✅ `PokeAccessibilityService` — posts to DetectionState; skips OCR when Auto OFF
 
-### Session 5
+### Session 5 — NEXT
 - Profile data model (crop region + ruleset + enabled generations)
 - Calibration flow: screenshot → user drags box → save region
 - Profile CRUD + last-used profile persistence
