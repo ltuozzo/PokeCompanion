@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PokeCompanion</string>
+    <string name="accessibility_service_label">PokeCompanion</string>
+    <string name="accessibility_service_description">Reads the top screen to detect Pokemon battles and display type weaknesses on the bottom screen. No personal data is collected.</string>
 </resources>

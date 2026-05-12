@@ -37,14 +37,24 @@ A "Swap displays" toggle will be in Settings if display IDs are reversed.
 The `gen3Rules` flag in `WeaknessEngine.compute()` controls the type chart rules, not the Pokemon's stored types.
 Gen 4–9 data (~650 more Pokemon) can be added later from PokeAPI before Session 3.
 
-### Session 2 — NEXT
-- Accessibility Service class + AndroidManifest permission
-- `takeScreenshot(displayId = 0)` call
-- Perceptual hash comparison (pHash of cropped bitmap region)
-- 1-second polling loop (foreground service with notification)
-- Verify correct display ID on physical device
+### Session 2 — COMPLETE
+- ✅ `detection/PokeAccessibilityService.kt` — 1s polling loop, `takeScreenshot(displayId)`, hash comparison, logs on change
+- ✅ `detection/ImageHasher.kt` — aHash (8×8 average hash), `distance()`, `isSame(threshold=5)`
+- ✅ `detection/NotificationHelper.kt` — persistent foreground notification, IMPORTANCE_LOW channel
+- ✅ `res/xml/accessibility_service_config.xml` — `canTakeScreenshot="true"`, no event types needed
+- ✅ `AndroidManifest.xml` — service declaration, `BIND_ACCESSIBILITY_SERVICE`, `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`
+- ✅ `ImageHasherTest.kt` — Hamming distance + isSame threshold tests
 
-### Session 3
+**Display ID note:** `PokeAccessibilityService.displayId` defaults to `0`. Change to `1` if the bottom screen is captured instead. A Settings toggle (Session 6) will expose this.
+
+**To test Session 2:**
+1. Build and install: `./gradlew installDebug`
+2. On Ayn Thor: Settings → Accessibility → PokeCompanion → Enable
+3. Grant POST_NOTIFICATIONS if prompted
+4. Run: `adb logcat -s PokeCompanion`
+5. Open a Pokemon game on the top screen — you should see "Screen changed" log lines when the display updates
+
+### Session 3 — NEXT
 - ML Kit Text Recognition dependency
 - Hardcoded crop region (configurable in Session 5)
 - OCR result → Pokemon name lookup in DB using enabled-generation filter
