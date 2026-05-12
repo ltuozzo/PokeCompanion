@@ -7,6 +7,7 @@ import android.view.accessibility.AccessibilityEvent
 import com.pokecompanion.data.database.DatabasePopulator
 import com.pokecompanion.data.database.PokeDatabase
 import com.pokecompanion.data.profile.ProfileManager
+import com.pokecompanion.data.settings.SettingsManager
 import kotlinx.coroutines.*
 
 class PokeAccessibilityService : AccessibilityService() {
@@ -31,8 +32,9 @@ class PokeAccessibilityService : AccessibilityService() {
             val dao = db.pokemonDao()
             DatabasePopulator(applicationContext).populateIfEmpty(dao)
 
-            // ProfileManager uses the same DB instance — init is idempotent.
+            // ProfileManager and SettingsManager — both idempotent.
             ProfileManager.init(applicationContext)
+            SettingsManager.init(applicationContext)
 
             ocr = OcrPipeline(dao = dao)
 
@@ -49,14 +51,14 @@ class PokeAccessibilityService : AccessibilityService() {
             startPolling()
         }
 
-        Log.d(TAG, "Service connected — polling display $displayId every ${POLL_INTERVAL_MS}ms")
+        Log.d(TAG, "Service connected — polling display $displayId every ${SettingsManager.pollIntervalMs}ms")
     }
 
     private fun startPolling() {
         pollingJob = serviceScope.launch {
             while (isActive) {
                 captureAndCheck()
-                delay(POLL_INTERVAL_MS)
+                delay(SettingsManager.pollIntervalMs)
             }
         }
     }
@@ -152,7 +154,6 @@ class PokeAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "PokeCompanion"
-        private const val POLL_INTERVAL_MS = 1000L
         private const val EMPTY_HASH = -1L
 
         // Assumed top screen display ID — verify on device.

@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import com.pokecompanion.data.profile.ProfileManager
+import com.pokecompanion.data.settings.SettingsManager
 import com.pokecompanion.ui.screens.AppContent
 
 class MainActivity : ComponentActivity() {
@@ -14,6 +15,7 @@ class MainActivity : ComponentActivity() {
         // Init ProfileManager here so profiles load even if the accessibility
         // service hasn't been enabled yet (e.g. first-time setup).
         ProfileManager.init(this)
+        SettingsManager.init(this)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 AppContent()

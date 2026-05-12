@@ -95,11 +95,22 @@ Gen 4–9 data (~650 more Pokemon) can be added later from PokeAPI before Sessio
 Screen drag coords → bitmap coords uses: `scale = min(canvasW/bmpW, canvasH/bmpH)`;
 then `bmpX = (screenX - imgLeft) / scale`, clamped to [0, bmpW].
 
-### Session 6 — NEXT
-- Manual search UI (compact list above keyboard, filtered by enabled gens)
-- Search auto-disables Auto mode
-- Settings screen: display ID swap, default ruleset, polling interval
-- Edge case polish
+### Session 6 — COMPLETE
+- ✅ `data/settings/SettingsManager.kt` — SharedPreferences wrapper: displayId, pollIntervalMs, defaultGen3Rules
+- ✅ `ui/screens/SettingsScreen.kt` — display ID swap, polling interval, default gen3 toggle, Accessibility Settings shortcut
+- ✅ `ui/screens/MainScreen.kt` — search mode (debounced, filtered by active profile gens), service-not-enabled banner, ⚙ Settings button
+- ✅ `ui/screens/ProfileScreen.kt` — gen3Rules toggle per profile
+- ✅ `ui/components/WeaknessCard.kt` — gen3Rules parameter wired through; `remember(pokemon, gen3Rules)` key
+- ✅ `data/profile/ProfileManager.kt` — search(query) suspend fun + updateGen3Rules()
+- ✅ `detection/PokeAccessibilityService.kt` — poll delay reads SettingsManager.pollIntervalMs
+- ✅ `MainActivity.kt` — SettingsManager.init() called on launch
+
+**Search UX:**
+- Tapping "Search" → Auto OFF, search bar opens in content area
+- Tapping a result → WeaknessCard shown, "Search" button becomes "Close"
+- Auto ON toggle → clears manual selection and collapses search
+
+**All 6 sessions complete. App is fully functional.**
 
 ## Key File Paths
 

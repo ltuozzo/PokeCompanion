@@ -33,9 +33,9 @@ import com.pokecompanion.engine.WeaknessEngine
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun WeaknessCard(pokemon: PokemonEntity, modifier: Modifier = Modifier) {
-    val weakness = remember(pokemon) {
-        WeaknessEngine.compute(pokemon.primaryType(), pokemon.secondaryType(), gen3Rules = false)
+fun WeaknessCard(pokemon: PokemonEntity, gen3Rules: Boolean = false, modifier: Modifier = Modifier) {
+    val weakness = remember(pokemon, gen3Rules) {
+        WeaknessEngine.compute(pokemon.primaryType(), pokemon.secondaryType(), gen3Rules)
     }
 
     Column(

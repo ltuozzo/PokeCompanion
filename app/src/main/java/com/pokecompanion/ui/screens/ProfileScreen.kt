@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -145,6 +146,14 @@ private fun ProfileRow(
                 color = Color.White.copy(alpha = 0.4f),
                 fontSize = 12.sp
             )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Gen 3 rules", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+                Spacer(Modifier.width(6.dp))
+                Switch(
+                    checked = profile.gen3Rules,
+                    onCheckedChange = { ProfileManager.updateGen3Rules(profile.id, it) }
+                )
+            }
         }
 
         if (!isActive) {
