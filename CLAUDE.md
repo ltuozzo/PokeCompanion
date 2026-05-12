@@ -79,13 +79,23 @@ Gen 4–9 data (~650 more Pokemon) can be added later from PokeAPI before Sessio
 - ✅ `MainActivity.kt` — swapped to ComponentActivity + setContent + darkColorScheme
 - ✅ `PokeAccessibilityService` — posts to DetectionState; skips OCR when Auto OFF
 
-### Session 5 — NEXT
-- Profile data model (crop region + ruleset + enabled generations)
-- Calibration flow: screenshot → user drags box → save region
-- Profile CRUD + last-used profile persistence
-- Profile switcher in top bar
+### Session 5 — COMPLETE
+- ✅ `data/model/ProfileEntity.kt` — Room entity: name, crop rect (4 nullable ints), gen3Rules, enabledGenerations, isLastUsed
+- ✅ `data/database/ProfileDao.kt` — getAll, getLastUsed, insert, update, delete, clearLastUsed, markLastUsed
+- ✅ `data/database/PokeDatabase.kt` — version 2, MIGRATION_1_2 (adds profiles table), profileDao()
+- ✅ `data/profile/ProfileManager.kt` — singleton: init(context), activeProfile StateFlow, create/delete/switchTo/saveCrop
+- ✅ `detection/DetectionState.kt` — added pendingCalibration + calibrationBitmap StateFlows
+- ✅ `detection/PokeAccessibilityService.kt` — observes active profile → updates OcrPipeline; posts calibration screenshot
+- ✅ `ui/screens/CalibrationScreen.kt` — shows top-screen screenshot; drag-to-draw crop rect; saves to profile
+- ✅ `ui/screens/ProfileScreen.kt` — profile list with Select / Calibrate / Delete; create dialog
+- ✅ `ui/screens/MainScreen.kt` — profile chip row (scrollable), Profiles button; AppContent() handles navigation
+- ✅ `MainActivity.kt` — calls ProfileManager.init() so profiles load without the service
 
-### Session 6
+**Calibration coordinate mapping note:**
+Screen drag coords → bitmap coords uses: `scale = min(canvasW/bmpW, canvasH/bmpH)`;
+then `bmpX = (screenX - imgLeft) / scale`, clamped to [0, bmpW].
+
+### Session 6 — NEXT
 - Manual search UI (compact list above keyboard, filtered by enabled gens)
 - Search auto-disables Auto mode
 - Settings screen: display ID swap, default ruleset, polling interval

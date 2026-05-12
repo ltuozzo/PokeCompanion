@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.pokecompanion.data.database.DatabasePopulator
 import com.pokecompanion.data.database.PokeDatabase
+import com.pokecompanion.data.profile.ProfileManager
 import kotlinx.coroutines.*
 
 class PokeAccessibilityService : AccessibilityService() {
@@ -16,11 +17,6 @@ class PokeAccessibilityService : AccessibilityService() {
 
     private lateinit var ocr: OcrPipeline
 
-    // The last successful detection — held until a new one arrives.
-    // Session 4 will expose this to the UI via a StateFlow / SharedFlow.
-    var lastResult: DetectionResult = DetectionResult.None
-        private set
-
     override fun onServiceConnected() {
         super.onServiceConnected()
         NotificationHelper.createChannel(this)
@@ -30,16 +26,25 @@ class PokeAccessibilityService : AccessibilityService() {
             Log.d(TAG, "Foreground notification skipped: ${e.message}")
         }
 
-        // Initialise DB + OCR pipeline asynchronously so we don't block the main thread.
         serviceScope.launch(Dispatchers.IO) {
             val db = PokeDatabase.getInstance(applicationContext)
             val dao = db.pokemonDao()
             DatabasePopulator(applicationContext).populateIfEmpty(dao)
-            ocr = OcrPipeline(
-                dao = dao,
-                cropRect = defaultCropRect,     // hardcoded for now; Session 5 makes it configurable
-                generations = enabledGenerations
-            )
+
+            // ProfileManager uses the same DB instance — init is idempotent.
+            ProfileManager.init(applicationContext)
+
+            ocr = OcrPipeline(dao = dao)
+
+            // Keep OCR pipeline in sync with the active profile.
+            serviceScope.launch {
+                ProfileManager.activeProfile.collect { profile ->
+                    ocr.cropRect = profile?.cropRect()
+                    ocr.generations = profile?.generationList() ?: (1..9).toList()
+                    Log.d(TAG, "Profile updated: ${profile?.name ?: "none"} crop=${ocr.cropRect} gens=${ocr.generations}")
+                }
+            }
+
             Log.d(TAG, "DB + OCR pipeline ready")
             startPolling()
         }
@@ -57,7 +62,9 @@ class PokeAccessibilityService : AccessibilityService() {
     }
 
     private fun captureAndCheck() {
-        if (!DetectionState.isAutoEnabled.value) return
+        // Skip screenshot entirely when auto is off AND no calibration pending.
+        if (!DetectionState.isAutoEnabled.value && !DetectionState.pendingCalibration.value) return
+
         takeScreenshot(
             displayId,
             mainExecutor,
@@ -69,6 +76,10 @@ class PokeAccessibilityService : AccessibilityService() {
                 override fun onFailure(errorCode: Int) {
                     Log.w(TAG, "Screenshot failed (code=$errorCode) — " +
                         "check that display $displayId is the correct top screen")
+                    // Clear pending calibration so the UI doesn't wait forever.
+                    if (DetectionState.pendingCalibration.value) {
+                        DetectionState.pendingCalibration.value = false
+                    }
                 }
             }
         )
@@ -85,10 +96,17 @@ class PokeAccessibilityService : AccessibilityService() {
             return
         }
 
+        // Calibration takes priority — post the raw bitmap and skip OCR.
+        if (DetectionState.pendingCalibration.value) {
+            DetectionState.pendingCalibration.value = false
+            DetectionState.postCalibrationBitmap(bitmap)
+            Log.d(TAG, "Calibration screenshot posted")
+            return
+        }
+
         val hash = ImageHasher.hash(bitmap)
 
         if (ImageHasher.isSame(hash, lastHash)) {
-            // Screen unchanged — skip OCR to save CPU/battery.
             bitmap.recycle()
             return
         }
@@ -96,7 +114,6 @@ class PokeAccessibilityService : AccessibilityService() {
         lastHash = hash
         Log.d(TAG, "Screen changed (hash=$hash) — running OCR")
 
-        // Run OCR on IO dispatcher; bitmap ownership passes to the coroutine.
         serviceScope.launch(Dispatchers.IO) {
             val detection = ocr.process(bitmap)
             bitmap.recycle()
@@ -110,16 +127,13 @@ class PokeAccessibilityService : AccessibilityService() {
     private fun handleDetection(result: DetectionResult) {
         when (result) {
             is DetectionResult.None -> {
-                // Keep showing lastResult — don't clear on overworld / menus.
                 Log.d(TAG, "No Pokemon detected — keeping last result")
             }
             is DetectionResult.Single -> {
-                lastResult = result
                 DetectionState.postResult(result)
                 Log.d(TAG, "Detected: ${result.pokemon.name}")
             }
             is DetectionResult.Double -> {
-                lastResult = result
                 DetectionState.postResult(result)
                 Log.d(TAG, "Detected 2v2: ${result.pokemon1.name} + ${result.pokemon2.name}")
             }
@@ -144,14 +158,5 @@ class PokeAccessibilityService : AccessibilityService() {
         // Assumed top screen display ID — verify on device.
         // If the bottom screen is captured instead, change to 1 in Settings (Session 6).
         var displayId = 0
-
-        // All generations enabled by default.
-        // Session 5 will replace this with per-profile settings.
-        var enabledGenerations: List<Int> = (1..9).toList()
-
-        // Hardcoded crop rect for enemy name bar (GBA-style games, portrait layout).
-        // Session 5 will let the user calibrate this via the profile system.
-        // null = full screenshot (use for initial testing before calibration).
-        var defaultCropRect: android.graphics.Rect? = null
     }
 }
