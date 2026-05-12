@@ -1,0 +1,11 @@
+.gradle
+/local.properties
+/build/
+*/build/
+*.iml
+.idea/
+*.apk
+*.aab
+*.ap_
+# Gradle wrapper JAR is binary — regenerate with: gradle wrapper --gradle-version 8.6
+gradle/wrapper/gradle-wrapper.jar
