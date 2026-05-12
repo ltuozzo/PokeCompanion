@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.gson)
+    implementation(libs.mlkit.text.recognition)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)

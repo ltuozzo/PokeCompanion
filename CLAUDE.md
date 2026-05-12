@@ -54,13 +54,22 @@ Gen 4–9 data (~650 more Pokemon) can be added later from PokeAPI before Sessio
 4. Run: `adb logcat -s PokeCompanion`
 5. Open a Pokemon game on the top screen — you should see "Screen changed" log lines when the display updates
 
-### Session 3 — NEXT
-- ML Kit Text Recognition dependency
-- Hardcoded crop region (configurable in Session 5)
-- OCR result → Pokemon name lookup in DB using enabled-generation filter
-- Multi-block detection for 2v2 (2 name matches = 2v2)
+### Session 3 — COMPLETE
+- ✅ `mlkit-text-recognition` 16.0.1 added to version catalog + `app/build.gradle.kts`
+- ✅ `detection/DetectionResult.kt` — sealed class: `None`, `Single(pokemon)`, `Double(pokemon1, pokemon2)`
+- ✅ `detection/OcrPipeline.kt` — crops bitmap → ML Kit OCR → iterates text blocks → DB lookup → DetectionResult
+- ✅ `detection/PokeAccessibilityService.kt` — wired to OCR; initialises DB + pipeline async; `lastResult` held on `None`
+- ✅ 2v2 support: 2 DB hits from OCR text blocks → `DetectionResult.Double`
+- ✅ `defaultCropRect = null` (full screenshot) for initial testing; Session 5 adds calibration UI
+- ✅ `enabledGenerations` companion var (all gens by default); Session 5 replaces with per-profile value
 
-### Session 4
+**OCR tuning notes:**
+- `cropRect = null` during early testing is intentional — calibrate region in Session 5
+- ML Kit returns multiple `TextBlock`s per image; we iterate all and stop at 2 hits
+- `findByName` uses `LOWER(name) = LOWER(:name)` — exact match required; OCR must produce clean names
+- If OCR accuracy is low on GBA fonts, a fuzzy prefix search via `search()` can be tried as fallback
+
+### Session 4 — NEXT
 - Jetpack Compose dependencies + ComposeActivity setup
 - Weakness card UI with official-style type badges (icon + text + multiplier label)
 - 2v2 tab layout (PagerState with 2 tabs)
@@ -92,6 +101,12 @@ app/src/main/java/com/pokecompanion/
 │   │   ├── PokeDatabase.kt      — singleton Room DB
 │   │   └── DatabasePopulator.kt — first-run JSON → DB import
 │   └── TypeChart.kt             — effectiveness map, gen3 lazy variant
+├── detection/
+│   ├── DetectionResult.kt       — sealed class: None / Single / Double
+│   ├── ImageHasher.kt           — aHash, distance, isSame
+│   ├── NotificationHelper.kt    — foreground notification
+│   ├── OcrPipeline.kt           — crop → ML Kit → DB lookup → DetectionResult
+│   └── PokeAccessibilityService.kt — 1s polling, hash guard, OCR dispatch
 ├── engine/
 │   └── WeaknessEngine.kt        — compute() + WeaknessResult data class
 └── MainActivity.kt              — stub (UI in Session 4)
@@ -135,5 +150,5 @@ adb logcat -s PokeCompanion
 | Gson | 2.10.1 | JSON → DB population |
 | Coroutines Android | 1.8.0 | Room async operations |
 | AppCompat | 1.7.0 | Activity base class |
-| ML Kit Text Recognition | — | Added Session 3 |
+| ML Kit Text Recognition | 16.0.1 | On-device OCR for Pokemon name detection |
 | Jetpack Compose BOM | — | Added Session 4 |
